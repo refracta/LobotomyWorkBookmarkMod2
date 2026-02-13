@@ -52,6 +52,13 @@ jobs:
       contents: write
 
     steps:
+      - name: Compute Release Name
+        id: release_name
+        shell: pwsh
+        run: |
+          $short = "${env:GITHUB_SHA}".Substring(0, 7)
+          "name=refracta_WorkBookmark_MOD ($short)" >> $env:GITHUB_OUTPUT
+
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
@@ -61,5 +68,6 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          name: ${{ steps.release_name.outputs.name }}
           files: dist/refracta_WorkBookmark_MOD.zip
           generate_release_notes: true
