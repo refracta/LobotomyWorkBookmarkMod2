@@ -1,0 +1,65 @@
+name: WorkBookmark CI
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "workbookmark-v*"
+      - "v*"
+    paths:
+      - "src/refracta_WorkBookmark_MOD/**"
+      - "mod/refracta_WorkBookmark_MOD/**"
+      - "scripts/package_workbookmark.ps1"
+      - ".github/workflows/workbookmark-ci.yml"
+  pull_request:
+    paths:
+      - "src/refracta_WorkBookmark_MOD/**"
+      - "mod/refracta_WorkBookmark_MOD/**"
+      - "scripts/package_workbookmark.ps1"
+      - ".github/workflows/workbookmark-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build and Package
+        shell: pwsh
+        run: ./scripts/package_workbookmark.ps1 -Configuration Release
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: refracta_WorkBookmark_MOD
+          path: dist/refracta_WorkBookmark_MOD.zip
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: refracta_WorkBookmark_MOD
+          path: dist
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/refracta_WorkBookmark_MOD.zip
+          generate_release_notes: true
